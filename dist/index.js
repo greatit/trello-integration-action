@@ -8996,20 +8996,21 @@ async function run(pr) {
 		var ghAssignee = null
 		var memberId = null
 
-		if(pr.assignee) {
-			console.log("PR assignee found")
-			ghAssignee = pr.assignee.login
-			memberId = await getMemberId(ghAssignee)
-		} else {
-			console.log("No PR assignee found")
-		}
-
 		if (cardIds.length) {
 			console.log('Found card ids', cardIds)
 
 			await addAttachmentToCards(cardIds, url)
 			await addLabelToCards(cardIds, pr.head)
-			await addExclusiveMemberToCards(cardIds, memberId)
+
+			// never unassign everyone from Tello card
+			if(pr.assignee) {
+				console.log("PR assignee found, let's manage card members")
+				ghAssignee = pr.assignee.login
+				memberId = await getMemberId(ghAssignee)
+				await addExclusiveMemberToCards(cardIds, memberId)
+			} else {
+				console.log("No PR assignee found, skipping card member mgmt")
+			}
 
 			if (pr.state === 'open' && pr.mergeable_state !== 'draft' && trelloListIdPrOpen) {
 				await moveCardsToList(cardIds, trelloListIdPrOpen)
